@@ -1,0 +1,142 @@
+import math
+import pygame
+
+# цвета
+black = (0, 0, 0)
+white = (255, 255, 255)
+blue = (0, 0, 255)
+red = (255, 0, 0)
+
+# размеры блока
+block_width = 36
+block_height = 20
+
+
+class Block(pygame.sprite.Sprite):
+    # класс представляет каждый блок, который будет выбит мячом
+
+    def __init__(self, color, x, y):
+        # конструктор. цвет блока и его положение
+
+        # sprite constructor
+        super().__init__()
+
+        # создать вид блока
+        # The width and height are sent as a list for the first parameter.
+        self.image = pygame.Surface([block_width, block_height])
+
+        # заполнить экран цветом
+        self.image.fill(color)
+
+        # получить прямоугольник
+        self.rect = self.image.get_rect()
+
+        # Переместить верхний левый угол прямоугольника к x, y.
+        # здесь появится блок..
+        self.rect.x = x
+        self.rect.y = y
+
+
+class Ball(pygame.sprite.Sprite):
+    # класс который представляет мяч, происходит от класса sprite в PG
+
+    # скорость в пикселях
+    speed = 10.0
+
+    # Floating point representation of where the ball is
+    x = 0.0
+    y = 180.0
+
+    # направление мяча в градусах
+    direction = 200
+
+    width = 12
+    height = 12
+
+    # Конструктор, цвет блока и его позиции х,у
+    def __init__(self):
+        super().__init__()
+
+        # фото мяча
+        self.image = pygame.Surface([self.width, self.height])
+
+        # цвет мяча
+        self.image.fill(white)
+
+        # получить прямоугольник который показывает, где находится изображение
+        self.rect = self.image.get_rect()
+
+        # получить значения высоты и ширины экрана
+        self.screenheight = pygame.display.get_surface().get_height()
+        self.screenwidth = pygame.display.get_surface().get_width()
+
+    def bounce(self, diff):
+        # отскок мяча от горизонтальной поверхности
+
+        self.direction = (180 - self.direction) % 360
+        self.direction -= diff
+
+    def update(self):
+        # обновить позицию мяча
+        # т.к. синус и косинус в градусах мы должны конвертировать их
+        direction_radians = math.radians(self.direction)
+
+        # изменить положение смотря на скорость и направление
+        self.x += self.speed * math.sin(direction_radians)
+        self.y -= self.speed * math.cos(direction_radians)
+
+        # Переместить изображение туда, где находятся x и y
+        self.rect.x = self.x
+        self.rect.y = self.y
+
+        # отскок от верхней части экрана
+        if self.y <= 0:
+            self.bounce(0)
+            self.y = 1
+
+        # отскок от левой части экрана
+        if self.x <= 0:
+            self.direction = (360 - self.direction) % 360
+            self.x = 1
+
+        # отскок от правой части экрана
+        if self.x > self.screenwidth - self.width:
+            self.direction = (360 - self.direction) % 360
+            self.x = self.screenwidth - self.width - 1
+
+        # упали с нижнего края экрана
+        if self.y > 600:
+            return True
+        else:
+            return False
+
+
+class Player(pygame.sprite.Sprite):
+    # полоса снизу которой можно управлять
+
+    def __init__(self):
+        super().__init__()
+
+        self.width = 90
+        self.height = 20
+        self.image = pygame.Surface([self.width, self.height])
+        self.image.fill((white))
+
+        # Make our top-left corner the passed-in location.
+        self.rect = self.image.get_rect()
+        self.screenheight = pygame.display.get_surface().get_height()
+        self.screenwidth = pygame.display.get_surface().get_width()
+
+        self.rect.x = 0
+        self.rect.y = self.screenheight-self.height
+
+    def update(self):
+        # обновить позицию игрока
+        # получить данные где находится мышь
+        pos = pygame.mouse.get_pos()
+        # Установить левую сторону панели игрока в положение мыши
+        self.rect.x = pos[0]
+        # не нажимаем мышь
+        # убрать правую сторону экрана
+        if self.rect.x > self.screenwidth - self.width:
+            self.rect.x = self.screenwidth - self.width
